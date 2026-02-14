@@ -1,0 +1,166 @@
+Terraform Fundamentals (5 questions)
+
+
+#1.
+Terraform is an Infrastructure as Code (IaC) tool designed to build, change, and version infrastructure safely and efficiently. It uses a declarative approach, meaning you define the desired state of your infrastructure, and Terraform handles the orchestration to achieve that
+
+#2.
+Terraform is a declarative IaC tool. This means you define the desired end-state of your infrastructure in configuration files, and Terraform determines the actions required to reach that state. It focuses on what you want, not how to get there.
+
+#3.
+The primary purpose of a Terraform Provider is to act as a plug-in that allows Terraform to interact with external APIs (like AWS, Azure, GitHub, and such )
+
+#4.
+Terraform is intelligent because it treats your infrastructure as a graph, not just a flat list of items. When you write your configuration, Terraform automatically builds a dependency graph to map out which resources rely on others.
+
+#5.
+Terraform configuration files (.tf) act as the blueprint for infrastructure, written in HashiCorp Configuration Language (HCL). These files contain structured blocks that define the desired state.
+
+
+
+State Management & Backend Configuration (3 questions)
+
+
+#1.
+-Terraform Refresh: This command updates the state file (terraform.tfstate) to match the real-world infrastructure currently in the cloud. It does not make any changes to the infrastructure itself, only synchronizes the state file.
+-Terraform Plan: This command compares the current state file (reality) with your code (desired state) and generates a preview of the changes needed. It’s like a dry run before taking action.
+-Terraform Apply: This command actually executes the changes outlined in the plan to reach the desired state. It modifies the real-world infrastructure in the cloud.
+
+
+#2.
+Local backend -  The state file (terraform.tfstate) is saved right on your machine's hard drive.
+Remote backend -  The state file is stored in a shared cloud storage service (like an S3 bucket or Azure Storage).
+
+
+#3.
+To prevent state corruption, you must ensure that only one engineer can make changes at a time.
+
+
+Terraform Modules & Reusability (4 questions)
+
+
+#1.Using Terraform modules makes managing infrastructure easier. First, you can write code once and use it many times, which saves time. Second, it keeps everything consistent, so security and settings are the same everywhere. Finally, it breaks complex setups into smaller, simpler pieces, making the code much easier to read and maintain.
+
+
+#2.
+To pass a variable to a module, you need to complete three steps:
+-Define the Variable in the Module
+Inside the module's directory, create a variables.tf file and define the input variable.
+-Use the Variable in the Module
+In the module's main.tf, reference the variable using var.
+-Pass the Value from the Root Configuration
+In your root main.tf, assign a value to that variable inside the module call block.
+
+
+#3.
+Think of it like ordering pizza for friends.
+
+count is like saying: "Order 3 plain pizzas." You just know the number. If one friend cancels, it can be confusing to know which pizza to stop, which might cause Terraform to accidentally delete and remake the wrong ones.
+
+for_each is like saying: "Order a pizza for Dan, one for Yossi, and one for Sara." Each pizza has a name. If Yossi cancels, you just stop Yossi's pizza. The others are not affected. This is much safer and more stable.
+
+In short:
+count = Identical resources based on a number.
+for_each = Unique resources based on a name (key).
+
+
+#4.
+To source a module from a Git repository, you must use the source argument with a specific URL format.
+Key Syntax Rules:
+
+Prefix: You must start the URL with git:: (e.g., git::https://... or git::ssh://...).
+
+Versioning (?ref): It is best practice to select a specific version (Tag, Branch, or Commit ID) using the ?ref= parameter at the end of the URL.
+
+Subdirectories (//): If the module is inside a folder within the repo, use a double slash // before the folder name.
+
+
+Terraform with AWS (4 questions)
+
+
+#1.
+You define the resource by providing a name, an AMI (Amazon Machine Image), and an instance_type (the size of the server).
+ami: Specifies the software/OS to run on the instance.
+instance_type: Determines the CPU and RAM capacity.
+key_name: (Optional) The name of the SSH key pair used for logging in.
+
+
+#2.
+To define a basic VPC in Terraform using the aws_vpc resource, there is only one strictly required field:
+
+cidr_block: This defines the IPv4 address range for the VPC in CIDR notation (example "10.0.0.0/16").
+
+#3.
+Terraform manages IAM policies in AWS using two primary methods: Inline Policies and Managed Policies.
+
+IAM Policy Resource (aws_iam_policy): This creates a standalone Managed Policy that can be attached to multiple users, groups, or roles.
+
+IAM Policy Attachment (aws_iam_policy_attachment): This resource connects the policy to a specific IAM identity (User, Role, or Group).
+
+Data Source (aws_iam_policy_document): This is a Best Practice tool. It allows you to write the policy in HCL (Terraform's language) instead of raw JSON, reducing syntax errors.
+
+
+#4.
+Provisioning and attaching an Elastic Load Balancer (ELB) in Terraform involves three main components: the Load Balancer itself, a Target Group, and a Listener.
+
+To set up an Application Load Balancer (ALB), you follow these steps:
+
+Define the Load Balancer (aws_lb): Creates the physical balancer resource in specific subnets.
+
+Define the Target Group (aws_lb_target_group): Defines where the traffic should be sent (e.g., port 80) and how to perform health checks.
+
+Define the Listener (aws_lb_listener): Listens for incoming traffic (e.g., port 80) and forwards it to the Target Group.
+
+Attach Instances (aws_lb_target_group_attachment): Connects your specific EC2 instances to the Target Group.
+
+
+
+Debugging & Error Handling (4 questions)
+
+
+#1.
+The terraform validate command is used to check whether a Terraform configuration is syntactically correct and internally consistent.
+
+Syntax Check: It verifies that the HCL code follows the correct structure and rules.
+
+Static Analysis: It checks for missing required arguments, incorrect attribute names, or references to variables that don't exist.
+
+Local Execution: It does not access the cloud (AWS/Azure) or check if your credentials are valid; it only looks at the code itself.
+
+Pre-requisite: You must run terraform init before you can use terraform validate.
+
+
+#2.
+To debug Terraform effectively, you should use the following methods:
+
+Terraform Logs (TF_LOG): This is the most powerful tool. By setting the environment variable TF_LOG to levels like DEBUG or TRACE, you can see detailed output of what Terraform is doing behind the scenes.
+
+terraform validate: Use this to catch syntax errors and internal inconsistencies before running a plan.
+
+terraform plan: Always review the plan output to ensure the changes match your intent before applying them.
+
+terraform console: An interactive tool to test and evaluate expressions, functions, and variable values in real-time.
+
+terraform state list / show: Inspect the state file to see exactly how Terraform perceives your current infrastructure.
+
+
+#3.
+The ignore_changes lifecycle argument is used to prevent Terraform from updating a resource when specific attributes are changed outside of Terraform (e.g., via the AWS Console or an external script).
+
+Prevention of "Drift" Correction: Normally, Terraform tries to revert any manual changes to match the configuration file. ignore_changes tells Terraform to "look the other way" for specific fields.
+
+Use Cases: It is commonly used for attributes like Tags (if updated by external security tools) or Password/Secret fields that might change after the initial deployment.
+
+All Attributes: You can use all to ignore changes to every attribute of a resource
+
+
+#4.
+To import infrastructure that was created manually (e.g., via the AWS Console) into Terraform, follow these two steps:
+
+Code Preparation: Manually write a resource block in your .tf file. It can be empty, but it must have the correct resource type and name (e.g., resource "aws_instance" "my_server" {}).
+
+Run the Command: Execute terraform import to link the existing cloud resource to your code.
+
+Syntax: terraform import [TYPE].[NAME] [INSTANCE_ID]
+
+Example: terraform import aws_instance.my_server i-0123456789abcdef0
